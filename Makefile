@@ -1,6 +1,6 @@
-DOVDIR:=../dovecot-2.0.13
+DOVDIR:=/usr/include/dovecot/
 LIBS:=-ldrac
-LDFLAGS:=-L/usr/local/lib
+LDFLAGS:=-L/usr/lib
 
 CFLAGS=-Wall -W -shared -fPIC -DHAVE_CONFIG_H -I$(DOVDIR) \
 	-I$(DOVDIR)/src/lib \

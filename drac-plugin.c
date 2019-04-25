@@ -10,7 +10,7 @@
  *   http://dovecot.org/patches/1.1/drac.c
  */
 #include "lib.h"
-#include "network.h"
+#include "net.h"
 #include "ioloop.h"
 #include "mail-user.h"
 #include "mail-storage-private.h"
@@ -25,7 +25,7 @@
 /* libdrac function */
 int dracauth(char *, unsigned long, char **);
 
-const char *drac_plugin_version = DOVECOT_VERSION;
+const char *drac_plugin_version = DOVECOT_ABI_VERSION;
 
 static struct timeout *to_drac = NULL;
 static const char *drachost = NULL; /* dracd host */
@@ -43,21 +43,28 @@ static void drac_timeout(void *context ATTR_UNUSED)
 
 static void drac_mail_user_created(struct mail_user *user)
 {
+    i_debug("%s called", __FUNCTION__);
     const char *dractout_str;
-    char addrname[256];
     char *ep;
 
+    /*i_debug("%s:%d Checking address family", __FUNCTION__, __LINE__);
+    i_debug("user: %X", user);
+    if(user != NULL) i_debug("remote_ip: %X", user->remote_ip);
+    if(user->remote_ip != NULL) i_debug("family: %X", user->remote_ip->family);*/
+
+    if(user == NULL || user->remote_ip == NULL) {
+        i_error("%s:%d: no remote_ip found for user", __FUNCTION__, __LINE__);
+        return;
+    }
+
     /* check address family */
-    if(user->remote_ip->family != AF_INET) {
-        if(inet_ntop(user->remote_ip->family, &user->remote_ip->u,
-           addrname, sizeof(addrname)-1) == NULL) {
-            strcpy(addrname, "<unknown>");
-        }
-        i_error("%s: Only IPv4 addresses are supported (%s)", __FUNCTION__,
-                addrname);
+    if(user && user->remote_ip && user->remote_ip->family && user->remote_ip->family != AF_INET) {
+        i_error("%s: Only IPv4 addresses are supported", __FUNCTION__);
     } else {
         /* get remote IPv4 address... uum... */
         memcpy(&in_ip, &user->remote_ip->u, sizeof(in_ip));
+
+        i_debug("%s:%d Get IP: %lu", __FUNCTION__, __LINE__, in_ip);
 
         /* get DRAC server name */
         drachost = mail_user_plugin_getenv(user, "dracdserver");
